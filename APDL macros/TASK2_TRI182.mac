@@ -1,0 +1,91 @@
+FINISH 
+/CLEAR
+
+/PREP7
+
+! Set element type
+ET,1,PLANE182		
+
+! Material properties (Steel: 25Mn)
+MP,EX,1,2.1E11	
+MP,PRXY,1,0.28
+
+! Section property
+SECTYPE,1,SHELL
+SECDATA,0.01,1,
+
+! Keypoints and lines
+K,1,0,0,0
+K,2,2,0,0
+K,3,2,2,0
+K,4,0,2,0
+A,1,4,3,2
+
+!=============
+! Loop Starts 
+!=============
+*DO,I,1,7,1
+
+
+/PREP7
+! Clean the mesh data of previous iteration
+ALLSEL,ALL
+ACLEAR,ALL
+MID_N= 
+
+! Remesh the model
+MSHAPE,1
+N_MESH=1
+AATT,1,,1,,1
+ESIZE,,N_MESH
+
+AMESH,ALL
+
+! REFINE MESH
+*DO,J,1,I,1
+EREFINE,ALL,,,1,,OFF
+*ENDDO
+
+NUMCMP,NODE
+MID_N=5
+
+
+FINISH
+
+/SOLU
+NLGEOM,ON		! Nonlinear Geometry ON
+
+! Add constraints
+DK,1,ALL,0
+DK,4,UX,0
+DL,3,,UX,-0.01
+
+! Solve
+ANTYPE,0,NEW,
+ALLSEL,ALL
+SOLVE
+FINISH
+
+!=================
+! POST PROCESSING
+!=================
+/POST1
+
+! Displacement
+/ESHAPE,1,		! Turn on element display
+PLNSOL,U,X		! Plot nodal displacement contour at X direction
+*GET,ELEMNUM,ELEM,0,COUNT
+*GET,U_X,NODE,MID_N,U,X		! Get midpoint's Y-direction displacement
+*GET,STRESS,NODE,MID_N,S,EQV
+*GET,STRAIN,NODE,MID_N,EPTO,EQV
+
+! Write data
+*CFOPEN,C:\Users\camip\Desktop\TASK_TRI182,TXT,,APPEND
+*VWRITE,ELEMNUM,U_X,STRESS,STRAIN
+(F8.0,4X,F10.6,4X,F10.0,4X,F10.6)
+*CFCLOS
+
+*ENDDO
+!===========
+! Loop Ends
+!===========

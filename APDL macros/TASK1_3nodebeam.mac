@@ -1,0 +1,80 @@
+FINISH
+/CLEAR
+
+/PREP7
+
+! Set element type
+ET,1,BEAM189		
+
+! Material properties (Steel: 25Mn)
+MP,EX,1,2.1E11	
+MP,PRXY,1,0.28
+
+! Section property
+SECTYPE,1,BEAM,RECT		
+SECDATA,0.04,0.1
+
+! Keypoints and lines
+K,1,0,0,0
+K,2,1,0,0
+K,3,0.5,0.5,0
+L,1,2
+
+!=============
+! Loop Starts 
+!=============
+*DO,I,2,100,2
+
+/PREP7
+! Clean the mesh data of previous iteration
+ALLSEL,ALL				
+LCLEAR,ALL
+
+! Remesh the model
+N_MESH=I
+LATT,1,,1,,,3,1
+LESIZE,1,,,N_MESH
+LMESH,ALL
+/ESHAPE,1,		! Turn on element display
+
+FINISH
+
+/SOLU
+NLGEOM,ON		! Nonlinear Geometry ON
+
+! Add constraints
+DK,1,ALL,0
+DK,2,UY,-0.3
+
+! Solve
+ANTYPE,0,NEW,
+ALLSEL,ALL
+SOLVE
+FINISH
+
+!=================
+! POST PROCESSING
+!=================
+/POST1
+
+! Displacement
+PLNSOL,U,Y		! Plot nodal displacement contour at Y direction
+*GET,U_Y,NODE,N_MESH+2,U,Y		! Get midpoint's Y-direction displacement
+
+! Generalized strain Ex
+ETABLE,RightEx,SMISC,20,AVG						! Right node's Ex of each element. 
+ETABLE,LeftEx,SMISC,7,AVG							! Left node's Ex of each element.
+*GET,STRAIN1,ELEM,N_MESH/2,ETAB,RightEx		! Right node of the centerleft element
+*GET,STRAIN2,ELEM,N_MESH/2+1,ETAB,LeftEx	! Left node of the centerright element
+STRAIN=(STRAIN1+STRAIN2)/2					! The average of the above two Ex
+
+! Write data
+*CFOPEN,C:\Users\camip\Desktop\TASK1_3,TXT,,APPEND
+*VWRITE,I,STRAIN,U_Y
+(F3.0,4X,F10.6,4X,F10.6)
+*CFCLOS
+
+*ENDDO
+!===========
+! Loop Ends
+!===========
